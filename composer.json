@@ -1,0 +1,54 @@
+{
+    "name": "horat1us/yii2-configurator",
+    "description": "Configurable key-value settings module for Yii2 with typed modules, REST API, and CLI",
+    "type": "library",
+    "require": {
+        "php": ">=8.4",
+        "ext-pdo": "*",
+        "horat1us/yii2-chain-bootstrap": "^2.0",
+        "horat1us/yii2-migration-bootstrap": "^1.2",
+        "horat1us/yii2-model-schema": "^2.1",
+        "wearesho-team/yii-http": "^1.15",
+        "yiisoft/yii2": "^2.0.31"
+    },
+    "require-dev": {
+        "horat1us/yii2-asset-free": "^1.0",
+        "phpunit/phpunit": "^11.0",
+        "phpstan/phpstan": "^2.0",
+        "squizlabs/php_codesniffer": "^3.5"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "horat1us",
+            "email": "git-public@alias.horatius.dev"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Horat1us\\Yii\\Configurator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Horat1us\\Yii\\Configurator\\Tests\\": "tests/"
+        },
+        "files": [
+            "vendor/yiisoft/yii2/Yii.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration",
+        "lint": "phpcs --standard=PSR12 ./src ./tests",
+        "phpcbf": "phpcbf --standard=PSR12 ./src ./tests",
+        "analyse": "phpstan analyse"
+    }
+}

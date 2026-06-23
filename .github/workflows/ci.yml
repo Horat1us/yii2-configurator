@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yii2_configurator_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        php:
+          - "8.4"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo, pdo_pgsql
+          coverage: xdebug
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-php${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-php${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run tests
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        env:
+          DB_DSN: "pgsql:host=127.0.0.1;port=5434;dbname=yii2_configurator_test"
+          DB_USER: postgres
+          DB_PASSWORD: test
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse
+
+      - name: Run linter
+        run: vendor/bin/phpcs --standard=PSR12 ./src ./tests
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml

@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: yii2_configurator_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5434:5432"
