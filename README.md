@@ -123,21 +123,33 @@ $gateway = \Yii::$container->get(Repository::class)
     ->getValue(PaymentModule::class, fn($m) => $m->gateway);
 
 // Option C: inject module+repository into a Config class (best for complex domain logic)
+// Use a lazy load() guard — never call loadModule() in the constructor.
+// The constructor runs at DI resolution time (bootstrap), before migrations exist.
 class Config
 {
+    private bool $loaded = false;
+
     public function __construct(
         private readonly PaymentModule $module,
         private readonly Repository $repository,
     ) {
-        $repository->loadModule($module);
     }
 
-    public function getGateway(): string { return $this->module->gateway; }
+    public function getGateway(): string { return $this->load()->gateway; }
 
     public function setGateway(string $gateway): void
     {
         $this->repository->set('payment', 'gateway', $gateway);
-        $this->module->gateway = $gateway;
+        $this->load()->gateway = $gateway;
+    }
+
+    private function load(): PaymentModule
+    {
+        if (!$this->loaded) {
+            $this->repository->loadModule($this->module);
+            $this->loaded = true;
+        }
+        return $this->module;
     }
 }
 ```
