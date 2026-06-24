@@ -19,18 +19,28 @@ class ModuleTest extends TestCase
             public bool $enabled = true;
             public int $timeout = 30;
 
-            public function getKey(): string { return 'demo'; }
-            public function getModuleLabel(): string { return 'Demo Module'; }
-            public function defaults(): array {
+            public function getKey(): string
+            {
+                return 'demo';
+            }
+            public function getModuleLabel(): string
+            {
+                return 'Demo Module';
+            }
+            public function defaults(): array
+            {
                 return ['title' => 'Hello', 'enabled' => true, 'timeout' => 30];
             }
-            public function attributeDescriptions(): array {
+            public function attributeDescriptions(): array
+            {
                 return ['timeout' => 'Request timeout in seconds'];
             }
-            public function getFieldOptions(): array {
-                return ['enabled' => [0 => 'Disabled', 1 => 'Enabled']];
+            public function getFieldOptions(): array
+            {
+                return ['enabled' => ['disabled' => 'Disabled', 'enabled' => 'Enabled']];
             }
-            public function rules(): array {
+            public function rules(): array
+            {
                 return [
                     [['title'], 'string', 'max' => 255],
                     [['enabled'], 'boolean'],
@@ -54,7 +64,7 @@ class ModuleTest extends TestCase
     public function testAttributeValuesLabelsReturnsMappingForKnownAttribute(): void
     {
         $labels = $this->module->attributeValuesLabels('enabled');
-        $this->assertSame([0 => 'Disabled', 1 => 'Enabled'], $labels);
+        $this->assertSame(['disabled' => 'Disabled', 'enabled' => 'Enabled'], $labels);
     }
 
     public function testAttributeValuesLabelsReturnsNullForUnknownAttribute(): void

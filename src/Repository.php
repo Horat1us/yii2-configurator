@@ -109,7 +109,7 @@ readonly class Repository
             $transaction->commit();
         } catch (\Throwable $e) {
             $transaction->rollBack();
-            throw new Exception("Failed to save module {$module->getKey()}", [], 0, $e);
+            throw new Exception("Failed to save module {$module->getKey()}", [], '0', $e);
         }
     }
 
@@ -119,7 +119,7 @@ readonly class Repository
     public function get(string $moduleKey, string $attr, mixed $default = null): string
     {
         $entry = Entry::findOne(['key' => $this->dbKey($moduleKey, $attr)]);
-        return $entry?->value ?? (string)$default;
+        return $entry !== null ? $entry->value : (string)$default;
     }
 
     /**

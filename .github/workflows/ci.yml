@@ -57,7 +57,7 @@ jobs:
           DB_PASSWORD: test
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse
+        run: vendor/bin/phpstan analyse --memory-limit=512M
 
       - name: Run linter
         run: vendor/bin/phpcs --standard=PSR12 ./src ./tests

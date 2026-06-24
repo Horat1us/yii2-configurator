@@ -66,12 +66,27 @@ class RegistryTest extends TestCase
 
     private function makeModule(string $key): Module
     {
-        return new class($key) extends Module {
-            public function __construct(private string $k) { parent::__construct(); }
-            public function getKey(): string { return $this->k; }
-            public function getModuleLabel(): string { return ucfirst($this->k); }
-            public function defaults(): array { return []; }
-            public function rules(): array { return []; }
+        return new class ($key) extends Module {
+            public function __construct(private string $k)
+            {
+                parent::__construct();
+            }
+            public function getKey(): string
+            {
+                return $this->k;
+            }
+            public function getModuleLabel(): string
+            {
+                return ucfirst($this->k);
+            }
+            public function defaults(): array
+            {
+                return [];
+            }
+            public function rules(): array
+            {
+                return [];
+            }
         };
     }
 }

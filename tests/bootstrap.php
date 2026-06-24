@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable PSR1.Files.SideEffects
+
 declare(strict_types=1);
 
 defined('YII_DEBUG') or define('YII_DEBUG', true);

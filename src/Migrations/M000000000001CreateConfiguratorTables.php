@@ -27,7 +27,8 @@ class M000000000001CreateConfiguratorTables extends Migration
             'id'         => $this->primaryKey(),
             'key'        => $this->string(255)->notNull()->unique(),
             'value'      => $this->text()->notNull(),
-            'user_id'    => $this->integer()->null()->comment('Set by consuming project; add FK in your own migration.'),
+            'user_id'    => $this->integer()->null()
+                ->comment('Set by consuming project; add FK in your own migration.'),
             'updated_at' => $this->timestamp()->notNull()->defaultExpression('NOW()'),
         ]);
 
@@ -35,7 +36,8 @@ class M000000000001CreateConfiguratorTables extends Migration
             'id'         => $this->primaryKey(),
             'key'        => $this->string(255)->notNull(),
             'value'      => $this->text()->notNull(),
-            'user_id'    => $this->integer()->null()->comment('Set by consuming project; add FK in your own migration.'),
+            'user_id'    => $this->integer()->null()
+                ->comment('Set by consuming project; add FK in your own migration.'),
             'created_at' => $this->timestamp()->notNull()->defaultExpression('NOW()'),
         ]);
 
