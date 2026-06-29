@@ -11,6 +11,7 @@ class Bootstrap implements base\BootstrapInterface
 {
     public string $moduleName = 'staff';
     public string $controllerMapKey = 'configurator';
+    public ?string $managePermission = null;
 
     public function bootstrap($app): void
     {
@@ -18,9 +19,12 @@ class Bootstrap implements base\BootstrapInterface
             return;
         }
 
+        $config = ['class' => Controller::class];
+        if ($this->managePermission !== null) {
+            $config['managePermission'] = $this->managePermission;
+        }
+
         $app->getModule($this->moduleName, true)
-            ->controllerMap[$this->controllerMapKey] = [
-                'class' => Controller::class,
-            ];
+            ->controllerMap[$this->controllerMapKey] = $config;
     }
 }

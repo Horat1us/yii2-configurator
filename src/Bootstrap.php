@@ -17,14 +17,21 @@ class Bootstrap extends ChainBootstrap
         ConsoleBootstrap::class,
     ];
 
+    public ?string $managePermission = null;
+
     public function bootstrap($app): void
     {
         \Yii::$container->setSingleton(Registry::class);
 
-        // Register the default user serializer only if the consuming project has not already
-        // bound its own implementation.
         if (!\Yii::$container->has(UserSerializerInterface::class)) {
             \Yii::$container->set(UserSerializerInterface::class, DefaultUserSerializer::class);
+        }
+
+        if ($this->managePermission !== null) {
+            $this->chain['web'] = [
+                'class' => WebBootstrap::class,
+                'managePermission' => $this->managePermission,
+            ];
         }
 
         parent::bootstrap($app);
