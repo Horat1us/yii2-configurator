@@ -7,8 +7,6 @@ namespace Horat1us\Yii\Configurator\Tests\Integration;
 use Horat1us\Yii\Configurator\Records\Entry;
 use Horat1us\Yii\Configurator\Records\History;
 use Horat1us\Yii\Configurator\Repository;
-use PHPUnit\Framework\TestCase;
-
 class RepositoryTest extends TestCase
 {
     private Repository $repository;
