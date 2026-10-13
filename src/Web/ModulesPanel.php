@@ -17,13 +17,14 @@ class ModulesPanel extends Http\Panel
         $registry   = \Yii::$container->get(Registry::class);
         $repository = \Yii::$container->get(Repository::class);
 
-        $modules = array_filter(
+        // array_values: filtered out keys would turn the list into JSON object ({"1": ...})
+        $modules = array_values(array_filter(
             $registry->all(),
             static function ($module): bool {
                 $permission = $module->getRequiredPermission();
                 return $permission === null || \Yii::$app->user->can($permission);
             },
-        );
+        ));
 
         foreach ($modules as $module) {
             $repository->loadModule($module);
