@@ -28,10 +28,17 @@ class Bootstrap extends ChainBootstrap
         }
 
         if ($this->managePermission !== null) {
-            $this->chain['web'] = [
+            // replace web bootstrap reference: adding another element would bootstrap web twice
+            $web = [
                 'class' => WebBootstrap::class,
                 'managePermission' => $this->managePermission,
             ];
+            $index = array_search(WebBootstrap::class, $this->chain, true);
+            if ($index === false) {
+                $this->chain[] = $web;
+            } else {
+                $this->chain[$index] = $web;
+            }
         }
 
         parent::bootstrap($app);
