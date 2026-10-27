@@ -76,4 +76,57 @@ class ModuleTest extends TestCase
     {
         $this->assertNull($this->module->getRequiredPermission());
     }
+
+    public function testSetAttributesCoercesValuesLikeModel(): void
+    {
+        $this->module->setAttributes(['timeout' => '15', 'enabled' => '0', 'title' => 42]);
+
+        $this->assertSame(15, $this->module->timeout);
+        $this->assertFalse($this->module->enabled);
+        $this->assertSame('42', $this->module->title);
+        $this->assertTrue($this->module->validate());
+    }
+
+    public function testSetAttributesReportsEmptyStringForIntAsBlank(): void
+    {
+        $this->module->setAttributes(['title' => 'Updated', 'timeout' => '']);
+
+        $this->assertSame('Updated', $this->module->title, 'other attributes are still assigned');
+        $this->assertSame(30, $this->module->timeout, 'invalid value is not assigned');
+        $this->assertFalse($this->module->validate());
+        $this->assertSame(['timeout' => ['Timeout cannot be blank.']], $this->module->getErrors());
+    }
+
+    public function testSetAttributesReportsNonNumericStringForInt(): void
+    {
+        $this->module->setAttributes(['timeout' => 'abc']);
+
+        $this->assertFalse($this->module->validate());
+        $this->assertSame(['Timeout must be an integer.'], $this->module->getErrors('timeout'));
+    }
+
+    public function testSetAttributesReportsArrayForString(): void
+    {
+        $this->module->setAttributes(['title' => ['a']]);
+
+        $this->assertFalse($this->module->validate());
+        $this->assertSame(['Title must be a string.'], $this->module->getErrors('title'));
+    }
+
+    public function testSetAttributesReportsNullForBoolAsBlank(): void
+    {
+        $this->module->setAttributes(['enabled' => null]);
+
+        $this->assertFalse($this->module->validate());
+        $this->assertSame(['Enabled cannot be blank.'], $this->module->getErrors('enabled'));
+    }
+
+    public function testSetAttributesForgetsPreviousAssignmentErrors(): void
+    {
+        $this->module->setAttributes(['timeout' => '']);
+        $this->module->setAttributes(['timeout' => 5]);
+
+        $this->assertTrue($this->module->validate());
+        $this->assertSame(5, $this->module->timeout);
+    }
 }

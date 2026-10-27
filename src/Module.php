@@ -26,6 +26,14 @@ use yii\base\Model;
 abstract class Module extends Model implements AttributeValuesLabels
 {
     /**
+     * Errors of values that could not be assigned to typed properties by setAttributes(),
+     * reported by the next validate().
+     *
+     * @var array<string, string>
+     */
+    private array $assignmentErrors = [];
+
+    /**
      * Unique camelCase identifier for this module (e.g. 'payment', 'bankId').
      * Used as the URL segment and DB key prefix.
      */
@@ -73,6 +81,58 @@ abstract class Module extends Model implements AttributeValuesLabels
     public function attributeHints(): array
     {
         return $this->attributeDescriptions();
+    }
+
+    /**
+     * Assigns values one by one, so a value that does not fit a typed property
+     * (e.g. an empty string for an int field) becomes a validation error instead of a TypeError.
+     * Values PHP can coerce are assigned exactly as by Model::setAttributes().
+     *
+     * @param array|mixed $values
+     * @param bool $safeOnly
+     */
+    public function setAttributes($values, $safeOnly = true)
+    {
+        $this->assignmentErrors = [];
+        if (!is_array($values)) {
+            return; // Model::setAttributes() ignores non-array values too
+        }
+
+        foreach ($values as $name => $value) {
+            try {
+                parent::setAttributes([$name => $value], $safeOnly);
+            } catch (\TypeError) {
+                $this->assignmentErrors[$name] = $this->assignmentError((string)$name, $value);
+            }
+        }
+    }
+
+    public function afterValidate()
+    {
+        foreach ($this->assignmentErrors as $attribute => $error) {
+            $this->addError($attribute, $error);
+        }
+        parent::afterValidate();
+    }
+
+    private function assignmentError(string $attribute, mixed $value): string
+    {
+        $params = ['attribute' => $this->getAttributeLabel($attribute)];
+        if ($value === null || $value === '') {
+            return \Yii::t('yii', '{attribute} cannot be blank.', $params);
+        }
+
+        $type = property_exists($this, $attribute)
+            ? (new \ReflectionProperty($this, $attribute))->getType()
+            : null;
+        $typeName = $type instanceof \ReflectionNamedType ? $type->getName() : null;
+
+        return match ($typeName) {
+            'int' => \Yii::t('yii', '{attribute} must be an integer.', $params),
+            'float' => \Yii::t('yii', '{attribute} must be a number.', $params),
+            'string' => \Yii::t('yii', '{attribute} must be a string.', $params),
+            default => \Yii::t('yii', '{attribute} is invalid.', $params),
+        };
     }
 
     /**
