@@ -454,7 +454,17 @@ Type rules for the body:
 - `type: "string"` (all formats) → JSON string
 - `oneOf`/`enum` → the raw `const` value as a JSON string
 
-The server re-validates with the same rules and returns the saved module object (identical shape to the GET response). On validation failure the server returns HTTP 422 with a field-keyed error map.
+The server re-validates with the same rules and returns the saved module object (identical shape to the GET response). On validation failure the server returns HTTP 400 and saves nothing:
+
+```json
+{
+  "errors": [
+    { "attribute": "timeoutSeconds", "details": "Timeout Seconds must be an integer." }
+  ]
+}
+```
+
+A value that does not fit the typed property (an empty string or text for an `int` field, an array for a `string` field, `null` for a non-nullable field) is not assigned and is reported the same way. Values PHP can coerce (`"60"` for an `int`, `"0"`/`"1"` for a `bool`) are accepted.
 
 ---
 
