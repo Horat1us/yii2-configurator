@@ -154,6 +154,34 @@ class Config
 }
 ```
 
+### Value types
+
+The PHP type of each property decides how its value is stored in `configurator_entry.value` (a text column) and cast back on load:
+
+| PHP type | Stored as                | Loaded as                                                |
+|----------|--------------------------|----------------------------------------------------------|
+| `bool`   | `"1"` / `""`             | `(bool)(int)`                                            |
+| `int`    | the number as a string   | `(int)`                                                  |
+| `string` | the string               | the string                                               |
+| `array`  | JSON (`["card","bank"]`) | the decoded array; a value that isn't a JSON array or object loads as `[]` |
+
+Validate array properties with `each` (or `in` with `allowArray`), and keep lists a list: an array with gaps in its keys (e.g. after `array_filter()`) is stored as a JSON object, so re-index it with `array_values()`.
+
+```php
+/** @var string[] */
+public array $methods = ['card'];
+
+public function rules(): array
+{
+    return [
+        [['methods'], 'each', 'rule' => ['in', 'range' => ['card', 'bank', 'wallet']]],
+        [['methods'], 'filter', 'filter' => 'array_values'],
+    ];
+}
+```
+
+A string property that already holds a JSON array can be switched to `array` without migrating its stored values.
+
 ---
 
 ## Translations
@@ -302,7 +330,7 @@ Every module endpoint returns (or is an array of) this shape:
 }
 ```
 
-`values` keys correspond exactly to `schema.properties` keys. Use `values` to populate form fields on load. The types in `values` match the JSON Schema `type` declarations — `boolean`, `integer`, `number`, or `string`.
+`values` keys correspond exactly to `schema.properties` keys. Use `values` to populate form fields on load. The types in `values` match the JSON Schema `type` declarations — `boolean`, `integer`, `number`, `string`, or `array` (a JSON array).
 
 ---
 
@@ -453,6 +481,7 @@ Type rules for the body:
 - `type: "integer"` or `"number"` → JSON number
 - `type: "string"` (all formats) → JSON string
 - `oneOf`/`enum` → the raw `const` value as a JSON string
+- `type: "array"` → JSON array
 
 The server re-validates with the same rules and returns the saved module object (identical shape to the GET response). On validation failure the server returns HTTP 400 and saves nothing:
 
@@ -500,6 +529,7 @@ Response:
 - boolean: `"1"` → true, `"0"` → false
 - integer/number: parse with `Number(value)`
 - `oneOf` fields: look up the matching `const` in `schema.properties[attr].oneOf` to get the human `title`
+- array: parse with `JSON.parse(value)`
 
 `perPage` is capped at 100 by the server regardless of what is requested.
 
@@ -553,10 +583,13 @@ php yii configurator/list
 # Show a single module
 php yii configurator/get payment
 
-# Set a value (strings only; booleans as "1"/"0")
+# Set a value (booleans as "1"/"0")
 php yii configurator/set payment gateway paypal
 php yii configurator/set payment enabled 0
 php yii configurator/set payment timeoutSeconds 60
+
+# Arrays are shown and set as JSON
+php yii configurator/set payment methods '["card","bank"]'
 ```
 
 ---

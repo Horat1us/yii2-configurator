@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Horat1us\Yii\Configurator\Console;
 
+use Horat1us\Yii\Configurator\Module;
 use Horat1us\Yii\Configurator\Registry;
 use Horat1us\Yii\Configurator\Repository;
 use yii\console;
@@ -16,6 +17,8 @@ use yii\helpers\Console as YiiConsole;
  *   yii configurator/list               - List all registered modules with their current values
  *   yii configurator/get <key>          - Show all attributes of a single module
  *   yii configurator/set <key> <attr> <value> - Set a single attribute value
+ *
+ * Array attributes are shown and set as JSON: yii configurator/set payment methods '["card","bank"]'
  */
 class Controller extends console\Controller
 {
@@ -45,7 +48,7 @@ class Controller extends console\Controller
             foreach ($module->defaults() as $attr => $default) {
                 $value = $module->$attr;
                 $this->stdout("  {$attr}: ", YiiConsole::FG_CYAN);
-                $this->stdout(var_export($value, true) . "\n");
+                $this->stdout($this->formatValue($value) . "\n");
             }
         }
 
@@ -74,8 +77,8 @@ class Controller extends console\Controller
         foreach ($module->defaults() as $attr => $default) {
             $value = $module->$attr;
             $this->stdout("  {$attr}: ", YiiConsole::FG_CYAN);
-            $this->stdout(var_export($value, true));
-            $this->stdout(" (default: " . var_export($default, true) . ")\n", YiiConsole::FG_GREY);
+            $this->stdout($this->formatValue($value));
+            $this->stdout(" (default: " . $this->formatValue($default) . ")\n", YiiConsole::FG_GREY);
         }
         $this->stdout("\n");
 
@@ -87,7 +90,8 @@ class Controller extends console\Controller
      *
      * @param string $key   Module key (e.g. "payment")
      * @param string $attr  Attribute name (e.g. "enabled")
-     * @param string $value New value as a string (booleans: "1"/"0", integers: numeric string)
+     * @param string $value New value as a string (booleans: "1"/"0", integers: numeric string,
+     *                      arrays: JSON, e.g. '["card","bank"]')
      */
     public function actionSet(string $key, string $attr, string $value): int
     {
@@ -104,10 +108,46 @@ class Controller extends console\Controller
             return console\ExitCode::DATAERR;
         }
 
+        if ($this->isArrayAttribute($module, $attr)) {
+            try {
+                $decoded = json_decode($value, true, flags: JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                $decoded = null;
+            }
+            if (!is_array($decoded)) {
+                $this->stderr(
+                    "'{$attr}' of module '{$key}' is an array: pass it as JSON, e.g. '[\"a\",\"b\"]'\n",
+                    YiiConsole::FG_RED,
+                );
+                return console\ExitCode::DATAERR;
+            }
+            $value = $this->formatValue($decoded);
+        }
+
         \Yii::$container->get(Repository::class)->set($key, $attr, $value);
 
         $this->stdout("Set {$key}.{$attr} = {$value}\n", YiiConsole::FG_GREEN);
 
         return console\ExitCode::OK;
+    }
+
+    private function isArrayAttribute(Module $module, string $attr): bool
+    {
+        if (!property_exists($module, $attr)) {
+            return false;
+        }
+        $type = (new \ReflectionProperty($module, $attr))->getType();
+        return $type instanceof \ReflectionNamedType && $type->getName() === 'array';
+    }
+
+    /**
+     * Arrays as JSON, the form they are stored and set in; other values as var_export().
+     */
+    private function formatValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: var_export($value, true);
+        }
+        return var_export($value, true);
     }
 }

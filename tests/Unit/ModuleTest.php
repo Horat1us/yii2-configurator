@@ -18,6 +18,8 @@ class ModuleTest extends TestCase
             public string $title = 'Hello';
             public bool $enabled = true;
             public int $timeout = 30;
+            /** @var string[] */
+            public array $tags = [];
 
             public function getKey(): string
             {
@@ -29,7 +31,7 @@ class ModuleTest extends TestCase
             }
             public function defaults(): array
             {
-                return ['title' => 'Hello', 'enabled' => true, 'timeout' => 30];
+                return ['title' => 'Hello', 'enabled' => true, 'timeout' => 30, 'tags' => []];
             }
             public function attributeDescriptions(): array
             {
@@ -45,6 +47,7 @@ class ModuleTest extends TestCase
                     [['title'], 'string', 'max' => 255],
                     [['enabled'], 'boolean'],
                     [['timeout'], 'integer', 'min' => 1],
+                    [['tags'], 'each', 'rule' => ['string']],
                 ];
             }
         };
@@ -128,5 +131,22 @@ class ModuleTest extends TestCase
 
         $this->assertTrue($this->module->validate());
         $this->assertSame(5, $this->module->timeout);
+    }
+
+    public function testSetAttributesAssignsArray(): void
+    {
+        $this->module->setAttributes(['tags' => ['a', 'b']]);
+
+        $this->assertTrue($this->module->validate());
+        $this->assertSame(['a', 'b'], $this->module->tags);
+    }
+
+    public function testSetAttributesReportsStringForArray(): void
+    {
+        $this->module->setAttributes(['tags' => 'a,b']);
+
+        $this->assertFalse($this->module->validate());
+        $this->assertSame([], $this->module->tags, 'invalid value is not assigned');
+        $this->assertSame(['Tags is invalid.'], $this->module->getErrors('tags'));
     }
 }

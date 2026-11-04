@@ -36,6 +36,7 @@ class {Domain}Module extends Module
     // Typed public properties. PHP type determines DB→PHP cast:
     //   bool  → (bool)(int)   (store "1"/"0")
     //   int   → (int)
+    //   array → JSON (a value that isn't a JSON array/object loads as [])
     //   string → string (default)
     public bool $enabled = true;
     public string $mode = 'standard';
@@ -111,6 +112,9 @@ class {Domain}Module extends Module
 | `string` | `string`, max>255 | `{"type":"string","format":"textarea"}` |
 | `string` | `url`          | `{"type":"string","format":"uri"}` |
 | `string` | `in`, `range` + `getFieldOptions()` | `{"type":"string","oneOf":[...]}` |
+| `array`  | `each`, or `in` with `allowArray` | whatever `horat1us/yii2-model-schema` maps the rule to |
+
+`array` properties are stored as JSON. Keep list values a list (`array_values()` after filtering): an array with gaps in its keys is stored, and served to the UI, as a JSON object.
 
 ---
 
@@ -243,4 +247,7 @@ php yii configurator/get {domainKey}
 
 # Set a value
 php yii configurator/set {domainKey} enabled 0
+
+# Set an array value (JSON)
+php yii configurator/set {domainKey} tags '["a","b"]'
 ```
