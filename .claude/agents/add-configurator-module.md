@@ -112,9 +112,10 @@ class {Domain}Module extends Module
 | `string` | `string`, max>255 | `{"type":"string","format":"textarea"}` |
 | `string` | `url`          | `{"type":"string","format":"uri"}` |
 | `string` | `in`, `range` + `getFieldOptions()` | `{"type":"string","oneOf":[...]}` |
-| `array`  | `each`, or `in` with `allowArray` | whatever `horat1us/yii2-model-schema` maps the rule to |
+| `array`  | `in`, `range`, `allowArray` + `getFieldOptions()` | `{"type":"array","uniqueItems":true,"items":{"oneOf":[...]}}` (checkbox group) |
+| `array`  | `each`, `rule` => [`string`, max] | `{"type":"array","items":{"type":"string","maxLength":N}}` (list input) |
 
-`array` properties are stored as JSON. Keep list values a list (`array_values()` after filtering): an array with gaps in its keys is stored, and served to the UI, as a JSON object.
+`array` properties are stored as JSON. Add a `filter` rule with `array_values` (and `array_unique` for options) so the value stays a list: an array with gaps in its keys is stored, and served to the UI, as a JSON object. See README "Array settings".
 
 ---
 
