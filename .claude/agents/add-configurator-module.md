@@ -36,6 +36,7 @@ class {Domain}Module extends Module
     // Typed public properties. PHP type determines DB→PHP cast:
     //   bool  → (bool)(int)   (store "1"/"0")
     //   int   → (int)
+    //   array → JSON (a value that isn't a JSON array/object loads as [])
     //   string → string (default)
     public bool $enabled = true;
     public string $mode = 'standard';
@@ -111,6 +112,10 @@ class {Domain}Module extends Module
 | `string` | `string`, max>255 | `{"type":"string","format":"textarea"}` |
 | `string` | `url`          | `{"type":"string","format":"uri"}` |
 | `string` | `in`, `range` + `getFieldOptions()` | `{"type":"string","oneOf":[...]}` |
+| `array`  | `in`, `range`, `allowArray` + `getFieldOptions()` | `{"type":"array","uniqueItems":true,"items":{"oneOf":[...]}}` (checkbox group) |
+| `array`  | `each`, `rule` => [`string`, max] | `{"type":"array","items":{"type":"string","maxLength":N}}` (list input) |
+
+`array` properties are stored as JSON. Add a `filter` rule with `array_values` (and `array_unique` for options) so the value stays a list: an array with gaps in its keys is stored, and served to the UI, as a JSON object. See README "Array settings".
 
 ---
 
@@ -243,4 +248,7 @@ php yii configurator/get {domainKey}
 
 # Set a value
 php yii configurator/set {domainKey} enabled 0
+
+# Set an array value (JSON)
+php yii configurator/set {domainKey} tags '["a","b"]'
 ```

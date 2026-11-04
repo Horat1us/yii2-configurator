@@ -7,7 +7,7 @@
         "ext-pdo": "*",
         "horat1us/yii2-chain-bootstrap": "^2.0",
         "horat1us/yii2-migration-bootstrap": "^1.2",
-        "horat1us/yii2-model-schema": "^2.1",
+        "horat1us/yii2-model-schema": "^2.2",
         "wearesho-team/yii-http": "^1.15",
         "yiisoft/yii2": "^2.0.31"
     },

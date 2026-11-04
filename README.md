@@ -154,6 +154,58 @@ class Config
 }
 ```
 
+### Value types
+
+The PHP type of each property decides how its value is stored in `configurator_entry.value` (a text column) and cast back on load:
+
+| PHP type | Stored as                | Loaded as                                                |
+|----------|--------------------------|----------------------------------------------------------|
+| `bool`   | `"1"` / `""`             | `(bool)(int)`                                            |
+| `int`    | the number as a string   | `(int)`                                                  |
+| `string` | the string               | the string                                               |
+| `array`  | JSON (`["card","bank"]`) | the decoded array; a value that isn't a JSON array or object loads as `[]` |
+
+A string property that already holds a JSON array can be switched to `array` without migrating its stored values.
+
+### Array settings
+
+The rules of an array property decide its schema, so they decide how the UI renders it (see [Field types](#field-types)):
+
+```php
+/** @var string[] */
+public array $methods = ['card'];
+/** @var string[] */
+public array $blockedReferrers = [];
+
+public function rules(): array
+{
+    return [
+        // a choice of known options: rendered as a checkbox group
+        [['methods'], 'in', 'range' => ['card', 'bank', 'wallet'], 'allowArray' => true],
+        [['methods'], 'filter', 'filter' => fn(array $v) => array_values(array_unique($v))],
+        // a free list of values: rendered as a list input
+        [['blockedReferrers'], 'each', 'rule' => ['string', 'max' => 255]],
+        [['blockedReferrers'], 'filter', 'filter' => 'array_values'],
+    ];
+}
+
+public function getFieldOptions(): array
+{
+    return [
+        'methods' => [
+            'card'   => \Yii::t('payment', 'Card'),
+            'bank'   => \Yii::t('payment', 'Bank transfer'),
+            'wallet' => \Yii::t('payment', 'Wallet'),
+        ],
+    ];
+}
+```
+
+- `in` with `allowArray` accepts any subset of the range, the empty one included. Labels from `getFieldOptions()` work as for a single select.
+- `each` validates every element with its rule. The rule's schema becomes the schema of the items (`string`, `integer`, `email`, `in`, …).
+- The `filter` rules keep the value a list: an array with gaps in its keys (after `array_filter()`, `array_unique()`, or a client sending an object) is stored and served as a JSON object. `array_unique()` drops duplicates, which `in` with `allowArray` accepts.
+- A value that isn't an array (e.g. a comma-separated string) is reported as `{attribute} is invalid.`
+
 ---
 
 ## Translations
@@ -302,7 +354,7 @@ Every module endpoint returns (or is an array of) this shape:
 }
 ```
 
-`values` keys correspond exactly to `schema.properties` keys. Use `values` to populate form fields on load. The types in `values` match the JSON Schema `type` declarations — `boolean`, `integer`, `number`, or `string`.
+`values` keys correspond exactly to `schema.properties` keys. Use `values` to populate form fields on load. The types in `values` match the JSON Schema `type` declarations — `boolean`, `integer`, `number`, `string`, or `array` (a JSON array, see [Array settings](#array-settings)).
 
 ---
 
@@ -431,6 +483,37 @@ Same render as `oneOf` but use the value itself as both value and label. `enum` 
 
 The `pattern` value is a JavaScript-compatible regex (delimiters stripped from the PHP pattern). Use `new RegExp(pattern).test(value)` for client-side validation.
 
+#### Multi-select (array of options)
+
+```jsonc
+{
+  "title": "Methods",
+  "type": "array",
+  "uniqueItems": true,
+  "items": {
+    "oneOf": [
+      { "const": "card", "title": "Card" },
+      { "const": "bank", "title": "Bank transfer" },
+      { "const": "wallet", "title": "Wallet" }
+    ]
+  }
+}
+```
+
+Render as a checkbox group (or a multi-select). Send the checked `const` values as a JSON array, `[]` when none is checked. Produced by `in` with `allowArray`. `items` holds `enum` instead of `oneOf` when `getFieldOptions()` doesn't label every value.
+
+#### List of values (array)
+
+```jsonc
+{
+  "title": "Blocked Referrers",
+  "type": "array",
+  "items": { "type": "string", "maxLength": 255 }
+}
+```
+
+Render as a list input where entries are added and removed one by one, each entry rendered by its `items` schema. Send a JSON array. Produced by `each`. `items` is absent when the `each` rule has no schema (e.g. `safe`).
+
 ---
 
 ### PUT request
@@ -453,6 +536,7 @@ Type rules for the body:
 - `type: "integer"` or `"number"` → JSON number
 - `type: "string"` (all formats) → JSON string
 - `oneOf`/`enum` → the raw `const` value as a JSON string
+- `type: "array"` → JSON array
 
 The server re-validates with the same rules and returns the saved module object (identical shape to the GET response). On validation failure the server returns HTTP 400 and saves nothing:
 
@@ -500,6 +584,7 @@ Response:
 - boolean: `"1"` → true, `"0"` → false
 - integer/number: parse with `Number(value)`
 - `oneOf` fields: look up the matching `const` in `schema.properties[attr].oneOf` to get the human `title`
+- array: parse with `JSON.parse(value)`
 
 `perPage` is capped at 100 by the server regardless of what is requested.
 
@@ -521,6 +606,11 @@ async function loadModule(key) {
 }
 
 function buildField(property, value, required) {
+  if (property.type === 'array') {
+    const options = property.items?.oneOf ?? property.items?.enum?.map(v => ({ const: v, title: v }))
+    if (options) return { widget: 'checkboxes', options, value, required }
+    return { widget: 'list', item: property.items ? buildField(property.items, undefined, false) : { widget: 'text' }, value, required }
+  }
   if (property.oneOf) return { widget: 'select', options: property.oneOf, value, required }
   if (property.enum)  return { widget: 'select', options: property.enum.map(v => ({ const: v, title: v })), value, required }
   switch (property.type) {
@@ -553,10 +643,13 @@ php yii configurator/list
 # Show a single module
 php yii configurator/get payment
 
-# Set a value (strings only; booleans as "1"/"0")
+# Set a value (booleans as "1"/"0")
 php yii configurator/set payment gateway paypal
 php yii configurator/set payment enabled 0
 php yii configurator/set payment timeoutSeconds 60
+
+# Arrays are shown and set as JSON
+php yii configurator/set payment methods '["card","bank"]'
 ```
 
 ---

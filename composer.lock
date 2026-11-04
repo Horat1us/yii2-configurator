@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "13d05b8518eb7cdd121aa8bc88054362",
+    "content-hash": "2612987a819e37790334f5368a0a98ca",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -398,16 +398,16 @@
         },
         {
             "name": "horat1us/yii2-model-schema",
-            "version": "2.1.0",
+            "version": "2.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Horat1us/yii2-model-schema.git",
-                "reference": "9f7a9c4e56cec330d9d2092f6256a9c14baa161c"
+                "reference": "e56a72a5b31cb6588fcffdbc105017a5bc13cd94"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Horat1us/yii2-model-schema/zipball/9f7a9c4e56cec330d9d2092f6256a9c14baa161c",
-                "reference": "9f7a9c4e56cec330d9d2092f6256a9c14baa161c",
+                "url": "https://api.github.com/repos/Horat1us/yii2-model-schema/zipball/e56a72a5b31cb6588fcffdbc105017a5bc13cd94",
+                "reference": "e56a72a5b31cb6588fcffdbc105017a5bc13cd94",
                 "shasum": ""
             },
             "require": {
@@ -440,9 +440,9 @@
             "description": "JSON Schema for Yii2 Model using validation rules",
             "support": {
                 "issues": "https://github.com/Horat1us/yii2-model-schema/issues",
-                "source": "https://github.com/Horat1us/yii2-model-schema/tree/2.1.0"
+                "source": "https://github.com/Horat1us/yii2-model-schema/tree/2.2.0"
             },
-            "time": "2026-06-23T16:03:06+00:00"
+            "time": "2026-11-04T14:35:36+00:00"
         },
         {
             "name": "horat1us/yii2-validation-exception",

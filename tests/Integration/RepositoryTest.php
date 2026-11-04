@@ -7,6 +7,7 @@ namespace Horat1us\Yii\Configurator\Tests\Integration;
 use Horat1us\Yii\Configurator\Records\Entry;
 use Horat1us\Yii\Configurator\Records\History;
 use Horat1us\Yii\Configurator\Repository;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class RepositoryTest extends TestCase
 {
@@ -28,6 +29,7 @@ class RepositoryTest extends TestCase
         $this->assertSame('Default Title', $this->module->title);
         $this->assertFalse($this->module->active);
         $this->assertSame(10, $this->module->limit);
+        $this->assertSame(['alpha'], $this->module->tags);
     }
 
     public function testSetAndGetRoundTrip(): void
@@ -120,5 +122,72 @@ class RepositoryTest extends TestCase
 
         $active = $this->repository->getValue(TestModule::class, fn($m) => $m->active);
         $this->assertTrue($active);
+    }
+
+    public function testSaveModuleStoresArrayAsJson(): void
+    {
+        $this->module->tags = ['beta', 'ґанок/сад'];
+
+        $this->repository->saveModule($this->module, 7);
+
+        $this->assertSame('["beta","ґанок/сад"]', Entry::findOne(['key' => 'test.tags'])?->value);
+        $this->assertSame('["beta","ґанок/сад"]', History::findOne(['key' => 'test.tags'])?->value);
+
+        $this->repository->loadModule($this->module);
+        $this->assertSame(['beta', 'ґанок/сад'], $this->module->tags);
+    }
+
+    public function testSaveModuleKeepsEmptyArrayInsteadOfDefault(): void
+    {
+        $this->module->tags = [];
+
+        $this->repository->saveModule($this->module);
+        $this->assertSame('[]', $this->repository->get('test', 'tags'));
+
+        $this->repository->loadModule($this->module);
+        $this->assertSame([], $this->module->tags);
+    }
+
+    public function testLoadModuleDecodesJsonStoredAsString(): void
+    {
+        // the form a string property holding a JSON list has stored, so switching it to array needs no migration
+        $this->repository->set('test', 'tags', '["cpa", "cpa2"]');
+
+        $this->repository->loadModule($this->module);
+
+        $this->assertSame(['cpa', 'cpa2'], $this->module->tags);
+    }
+
+    public function testLoadModuleDecodesJsonObjectToAssociativeArray(): void
+    {
+        $this->repository->set('test', 'tags', '{"a":"x","b":"y"}');
+
+        $this->repository->loadModule($this->module);
+
+        $this->assertSame(['a' => 'x', 'b' => 'y'], $this->module->tags);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function notJsonArrayProvider(): array
+    {
+        return [
+            'empty string' => [''],
+            'invalid JSON' => ['cpa,cpa2'],
+            'JSON string'  => ['"cpa"'],
+            'JSON number'  => ['5'],
+            'JSON null'    => ['null'],
+        ];
+    }
+
+    #[DataProvider('notJsonArrayProvider')]
+    public function testLoadModuleLoadsEmptyArrayWhenStoredValueIsNotJsonArray(string $stored): void
+    {
+        $this->repository->set('test', 'tags', $stored);
+
+        $this->repository->loadModule($this->module);
+
+        $this->assertSame([], $this->module->tags);
     }
 }

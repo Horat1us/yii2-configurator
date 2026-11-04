@@ -15,6 +15,8 @@ class TestModule extends Module
     public string $title = 'Default Title';
     public bool $active = false;
     public int $limit = 10;
+    /** @var string[] */
+    public array $tags = ['alpha'];
 
     public function getKey(): string
     {
@@ -26,7 +28,7 @@ class TestModule extends Module
     }
     public function defaults(): array
     {
-        return ['title' => 'Default Title', 'active' => false, 'limit' => 10];
+        return ['title' => 'Default Title', 'active' => false, 'limit' => 10, 'tags' => ['alpha']];
     }
     public function rules(): array
     {
@@ -34,6 +36,7 @@ class TestModule extends Module
             [['title'], 'string', 'max' => 255],
             [['active'], 'boolean'],
             [['limit'], 'integer'],
+            [['tags'], 'each', 'rule' => ['string']],
         ];
     }
 }
