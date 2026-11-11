@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Horat1us\Yii\Configurator\Tests\Unit\Web;
 
+use Horat1us\Yii\Configurator\ListFilter;
 use Horat1us\Yii\Configurator\Module;
 use Horat1us\Yii\Configurator\Web\ModuleSerializerTrait;
 use PHPUnit\Framework\TestCase;
@@ -42,10 +43,9 @@ class ModuleSerializerTest extends TestCase
             public function rules(): array
             {
                 return [
+                    [['methods', 'blockedReferrers'], 'filter', 'filter' => new ListFilter()],
                     [['methods'], 'in', 'range' => ['card', 'bank', 'wallet'], 'allowArray' => true],
-                    [['methods'], 'filter', 'filter' => fn(array $v) => array_values(array_unique($v))],
                     [['blockedReferrers'], 'each', 'rule' => ['string', 'max' => 255]],
-                    [['blockedReferrers'], 'filter', 'filter' => 'array_values'],
                 ];
             }
 
@@ -97,12 +97,21 @@ class ModuleSerializerTest extends TestCase
     {
         $this->module->setAttributes([
             'methods' => ['bank', 'card', 'bank'],
-            'blockedReferrers' => [2 => 'b.example', 5 => 'a.example'],
+            'blockedReferrers' => [2 => ' b.example', 5 => 'a.example', 7 => '', 9 => 'b.example'],
         ]);
 
         $this->assertTrue($this->module->validate());
         $this->assertSame(['bank', 'card'], $this->module->methods);
         $this->assertSame(['b.example', 'a.example'], $this->module->blockedReferrers);
+    }
+
+    public function testFilterKeepsValuesThatAreNotStringsForValidation(): void
+    {
+        $this->module->setAttributes(['blockedReferrers' => ['a.example', ['b.example']]]);
+
+        $this->assertFalse($this->module->validate());
+        $this->assertSame(['a.example', ['b.example']], $this->module->blockedReferrers);
+        $this->assertNotEmpty($this->module->getErrors('blockedReferrers'));
     }
 
     public function testAcceptsEmptyArrays(): void
