@@ -180,12 +180,12 @@ public array $blockedReferrers = [];
 public function rules(): array
 {
     return [
+        // trim, drop blanks and duplicates, keep a list: before the rules that validate the values
+        [['methods', 'blockedReferrers'], 'filter', 'filter' => new ListFilter()],
         // a choice of known options: rendered as a checkbox group
         [['methods'], 'in', 'range' => ['card', 'bank', 'wallet'], 'allowArray' => true],
-        [['methods'], 'filter', 'filter' => fn(array $v) => array_values(array_unique($v))],
         // a free list of values: rendered as a list input
         [['blockedReferrers'], 'each', 'rule' => ['string', 'max' => 255]],
-        [['blockedReferrers'], 'filter', 'filter' => 'array_values'],
     ];
 }
 
@@ -203,7 +203,12 @@ public function getFieldOptions(): array
 
 - `in` with `allowArray` accepts any subset of the range, the empty one included. Labels from `getFieldOptions()` work as for a single select.
 - `each` validates every element with its rule. The rule's schema becomes the schema of the items (`string`, `integer`, `email`, `in`, …).
-- The `filter` rules keep the value a list: an array with gaps in its keys (after `array_filter()`, `array_unique()`, or a client sending an object) is stored and served as a JSON object. `array_unique()` drops duplicates, which `in` with `allowArray` accepts.
+- `ListFilter` (`Horat1us\Yii\Configurator\ListFilter`) cleans the list before it is validated:
+  - trims string values and drops the empty ones;
+  - drops repeated values, keeping the first one (strict comparison: `1` and `"1"` both stay); `in` with `allowArray` would accept duplicates;
+  - re-indexes the result. An array with gaps in its keys (or an object sent by a client) would be stored and served as a JSON object.
+  - Values that aren't strings are kept, so `each` / `in` report them. Each step but re-indexing can be switched off: `new ListFilter(trim: false, removeEmpty: false, unique: false)`.
+- Only the first `each` rule of an attribute gives the schema its `items`. Put all the constraints of an item in one rule (e.g. one `each` with `['match', 'pattern' => '/^[a-z0-9-]{1,64}$/']` rather than one `each` with `string` and another with `match`).
 - A value that isn't an array (e.g. a comma-separated string) is reported as `{attribute} is invalid.`
 
 ---

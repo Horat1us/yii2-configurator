@@ -115,7 +115,7 @@ class {Domain}Module extends Module
 | `array`  | `in`, `range`, `allowArray` + `getFieldOptions()` | `{"type":"array","uniqueItems":true,"items":{"oneOf":[...]}}` (checkbox group) |
 | `array`  | `each`, `rule` => [`string`, max] | `{"type":"array","items":{"type":"string","maxLength":N}}` (list input) |
 
-`array` properties are stored as JSON. Add a `filter` rule with `array_values` (and `array_unique` for options) so the value stays a list: an array with gaps in its keys is stored, and served to the UI, as a JSON object. See README "Array settings".
+`array` properties are stored as JSON. Put a `filter` rule with `new ListFilter()` before the rules that validate the values: it trims, drops blanks and duplicates, and keeps the value a list (an array with gaps in its keys is stored, and served to the UI, as a JSON object). Only the first `each` rule of an attribute gives the schema its `items`, so keep the item constraints in one rule. See README "Array settings".
 
 ---
 
